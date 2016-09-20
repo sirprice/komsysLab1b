@@ -1,3 +1,4 @@
+import java.io.BufferedReader;
 import java.net.Socket;
 
 /**
@@ -13,6 +14,13 @@ public class Client implements Runnable {
 
     @Override
     public void run() {
+        while(true) {
+            //BufferedReader buff = new BufferedReader()
+            //clientSocket.getInputStream();
+        }
+    }
 
+    public void sendMsgToclient(String msg) {
+        clientSocket.getInputStream();
     }
 }
