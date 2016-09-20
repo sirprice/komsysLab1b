@@ -89,11 +89,17 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     }
 
     @Override
+    public void removeClient(Client client) {
+        InetAddress addr = client.getInetAddress();
+        Client remove = this.clientLookup.remove(addr);
+    }
+
+    @Override
     public void disconnectClient(Client client) {
         InetAddress addr = client.getInetAddress();
         Client remove = this.clientLookup.remove(addr);
         if (remove == null) {
-            System.out.println("Failed to removed");
+            //System.out.println("Client already disconnect and been removed");
             return;
         }
         broadcastMsg("Client: " + remove.getNickName() + " Disconected",remove);

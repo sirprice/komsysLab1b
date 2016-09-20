@@ -27,7 +27,5 @@ public class Main {
             Server server = new Server(Integer.parseInt(args[1]));
             server.start();
         }
-
-
     }
 }

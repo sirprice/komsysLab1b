@@ -59,14 +59,25 @@ public class Client implements Runnable {
                 }
             }
         } catch (IOException e) {
+
             e.printStackTrace();
         } finally {
+
+            serverDelegate.removeClient(this);
+            terminateClient();
             if (clientSocket != null) {
+                output.close();
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 try {
                     clientSocket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
             }
         }
     }
