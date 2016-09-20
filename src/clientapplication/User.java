@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.nio.Buffer;
+import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -23,6 +24,16 @@ public class User implements Runnable {
     public void start() {
         Thread th = new Thread(this);
         th.start();
+        Scanner scanner = new Scanner(System.in);
+        while (running.get()){
+            String msg = scanner.nextLine();
+            try {
+                postMessage(msg);
+            } catch (IOException e) {
+                e.printStackTrace();
+                running.set(false);
+            }
+        }
     }
 
     public void postMessage(String msg) throws IOException {
@@ -35,6 +46,10 @@ public class User implements Runnable {
     public void terminateUser() {
         running.set(false);
     }
+
+
+
+
     @Override
     public void run() {
         BufferedReader buffer = null;
@@ -43,6 +58,10 @@ public class User implements Runnable {
                 try {
                     buffer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                     String msg = buffer.readLine();
+                    if (msg == null){
+                        running.set(false);
+                        return;
+                    }
                     System.out.println("Incoming msg: " + msg);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -59,6 +78,4 @@ public class User implements Runnable {
             }
         }
     }
-
-
 }

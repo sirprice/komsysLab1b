@@ -21,7 +21,6 @@ public class Main {
             //InetSocketAddress addr = new InetSocketAddress(args[1],Integer.parseInt(args[2]));
             User user = new User(args[1], Integer.parseInt(args[2]));
             user.start();
-            user.postMessage("Test..dd");
         }
         if (args[0].toLowerCase().equals(SERVER)){
             System.out.println("Starting Server...");
