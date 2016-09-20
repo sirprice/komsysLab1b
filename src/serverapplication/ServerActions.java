@@ -5,5 +5,7 @@ package serverapplication;
  */
 public interface ServerActions {
     void disconnectClient(Client client);
+    String listNicknames();
+    String listCommands();
     boolean broadcastMsg(String msg,Client from);
 }

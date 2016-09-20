@@ -15,7 +15,8 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     private ConcurrentHashMap<InetAddress, Client> clientLookup;
     private BlockingQueue<MsgContainer> messageToBroadcast = new LinkedBlockingQueue<MsgContainer>();
     private ExecutorService threadPool;
-    private ConcurrentHashMap<String,Command> commandList = new ConcurrentHashMap<String,Command>();
+    private ConcurrentHashMap<String, Command> commandList = new ConcurrentHashMap<String, Command>();
+
     class MsgContainer {
         public String msg;
         public Client client;
@@ -25,6 +26,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
             this.client = client;
         }
     }
+
     public Server(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
         this.clientLookup = new ConcurrentHashMap<InetAddress, Client>();
@@ -33,15 +35,16 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     }
 
     private void registrateAllCommands() {
-        commandList.put("quit",new CommandDefault("quit"));
-        commandList.put("who",new CommandDefault("who"));
-        commandList.put("nick",new CmdChangeNick(this));
-        commandList.put("help",new CommandDefault("help"));
+        commandList.put("quit", new CommandDefault("quit"));
+        commandList.put("who", new CommandDefault("who"));
+        commandList.put("nick", new CmdChangeNick(this));
+        commandList.put("help", new CommandDefault("help"));
     }
 
     private void sendBroadcastMessage(MsgContainer msg) {
-        sendBroadcastMessage(msg.msg,msg.client);
+        sendBroadcastMessage(msg.msg, msg.client);
     }
+
     private void sendBroadcastMessage(String msg, Client from) {
         for (Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
             System.out.println(entry);
@@ -90,8 +93,27 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     }
 
     @Override
+    public String listNicknames() {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
+            System.out.println(entry);
+            Client c = entry.getValue();
+            sb.append(c.getNickName() + "\n");
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public String listCommands() {
+        return "Commands: \n"
+                +"/quit = logout and exit \n"
+                +"/who = list of all connected users \n"
+                +"/nick <newNickName> = change nickname \n"
+                +"/help = list all available commands";
+    }
+    @Override
     public boolean broadcastMsg(String msg, Client from) {
-        return messageToBroadcast.offer(new MsgContainer(msg,from));
+        return messageToBroadcast.offer(new MsgContainer(msg, from));
     }
 //    @Override
 //    boolean broadcastMsg(String msg, Client from) {
@@ -103,13 +125,15 @@ public class Server implements Runnable, ServerLogic, ServerActions {
         StringTokenizer tokenizer = new StringTokenizer(msg.substring(1), DELIMITERS);
         String cmd = null;
         if (tokenizer.hasMoreTokens()) {
-             cmd = tokenizer.nextToken();
+            cmd = tokenizer.nextToken();
         }
 
-        if (cmd == null) {return;}
+        if (cmd == null) {
+            return;
+        }
         Command command = commandList.get(cmd);
         if (command != null) {
-            command.processCommand(msg,client);
+            command.processCommand(msg, client);
         }
     }
 }
