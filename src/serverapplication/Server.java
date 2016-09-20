@@ -33,7 +33,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     }
 
     private void registrateAllCommands() {
-        commandList.put("quit",new CommandDefault("quit"));
+        commandList.put("quit",new CmdQuit(this));
         commandList.put("who",new CommandDefault("who"));
         commandList.put("nick",new CmdChangeNick(this));
         commandList.put("help",new CommandDefault("help"));
@@ -43,10 +43,11 @@ public class Server implements Runnable, ServerLogic, ServerActions {
         sendBroadcastMessage(msg.msg,msg.client);
     }
     private void sendBroadcastMessage(String msg, Client from) {
+        InetAddress inetAddress = (from != null) ? from.getInetAddress() : null;
         for (Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
             System.out.println(entry);
             Client c = entry.getValue();
-            if (!c.getInetAddress().equals(from.getInetAddress())) {
+            if (!c.getInetAddress().equals(inetAddress)) {
                 c.sendMsgToclient(msg);
             }
         }
@@ -66,6 +67,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
 
 
     public void start() throws IOException {
+
         threadPool.execute(this);
         while (true) {
             System.out.println("Waiting for connection...");
@@ -79,14 +81,20 @@ public class Server implements Runnable, ServerLogic, ServerActions {
             }
             System.out.println("Client Added!");
             threadPool.execute(client);
+            broadcastMsg("Client " + client.getNickName() +" connected",null);
         }
-
-
     }
 
     @Override
     public void disconnectClient(Client client) {
-
+        InetAddress addr = client.getInetAddress();
+        Client remove = this.clientLookup.remove(addr);
+        if (remove == null) {
+            System.out.println("Failed to removed");
+            return;
+        }
+        broadcastMsg("Client: " + remove.getNickName() + " Disconected",remove);
+        remove.terminateClient();
     }
 
     @Override
