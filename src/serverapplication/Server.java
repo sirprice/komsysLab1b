@@ -1,7 +1,5 @@
 package serverapplication;
 
-import serverapplication.Client;
-
 import java.io.IOException;
 import java.net.*;
 import java.util.Map;
@@ -10,7 +8,7 @@ import java.util.concurrent.*;
 /**
  * Created by o_0 on 2016-09-20.
  */
-public class Server implements Runnable, ServerBroadcast {
+public class Server implements Runnable, ServerLogic {
     ServerSocket serverSocket ;
     private ConcurrentHashMap<InetAddress, Client> clientLookup;
     private BlockingQueue<String> messageToBroadcast = new LinkedBlockingQueue<String>();
@@ -34,6 +32,7 @@ public class Server implements Runnable, ServerBroadcast {
         while (true) {
             try {
                 String msg = messageToBroadcast.take();
+
                 broadcastMessage(msg);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -64,4 +63,11 @@ public class Server implements Runnable, ServerBroadcast {
     @Override
     public boolean post(String msg) { return messageToBroadcast.offer(msg); }
 
+    @Override
+    public void evaluateCommand(String msg, Client client) {
+
+
+
+
+    }
 }
