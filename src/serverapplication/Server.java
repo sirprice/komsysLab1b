@@ -13,13 +13,16 @@ public class Server implements Runnable, ServerLogic {
     private ConcurrentHashMap<InetAddress, Client> clientLookup;
     private BlockingQueue<String> messageToBroadcast = new LinkedBlockingQueue<String>();
     private ExecutorService threadPool;
+    private ConcurrentHashMap<String,Command> commandList = new ConcurrentHashMap<String,Command>();
     public Server(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
         this.clientLookup = new ConcurrentHashMap<InetAddress, Client>();
         this.threadPool = Executors.newCachedThreadPool();
     }
 
-
+    private void registrateAllCommands() {
+        commandList.put("TestCmd",new CommandDefault());
+    }
     private void broadcastMessage(String msg) {
         for(Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
             System.out.println(entry);
@@ -66,7 +69,11 @@ public class Server implements Runnable, ServerLogic {
     @Override
     public void evaluateCommand(String msg, Client client) {
 
-
+        String cmdName = "TestCmd";
+        Command cmd = commandList.get(cmdName);
+        if (cmd != null) {
+            cmd.processCommand(msg,client);
+        }
 
 
     }
