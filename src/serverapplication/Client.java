@@ -50,7 +50,7 @@ public class Client implements Runnable {
 
                 String msg = input.readLine();
                 if (msg != null) {
-                    if (msg.charAt(0) == '/') {
+                    if (msg.length() > 0 && msg.charAt(0) == '/') {
                         // evaluate command
                         serverDelegate.evaluateCommand(msg,this);
                     }else{
