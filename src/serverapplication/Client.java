@@ -31,13 +31,13 @@ public class Client implements Runnable {
 
         try {
             while (runClient.get()) {
-                System.out.println("Start of loop");
+                //System.out.println("Start of loop");
                 //BufferedReader buff = new BufferedReader()
                 //clientSocket.getInputStream();
                 //buffer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                System.out.println("ReadLine...");
+                //System.out.println("ReadLine...");
                 String msg = input.readLine();
-                System.out.println("ReadLine done");
+                //System.out.println("ReadLine done");
                 serverDelegate.post(msg);
             }
         } catch (IOException e) {
@@ -60,20 +60,6 @@ public class Client implements Runnable {
         System.out.println("Sending msg: " + msg + " to: " + clientSocket.getInetAddress());
         this.output.println(msg);
         this.output.flush();
-//        try {
-//            data = new DataOutputStream(clientSocket.getOutputStream());
-//            data.writeBytes(msg);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            if (data != null) {
-//                try {
-//                    data.flush();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-        //clientSocket.getInputStream();
+
     }
 }
