@@ -1,9 +1,6 @@
 package clientapplication;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
 import java.nio.Buffer;
 import java.util.Scanner;
@@ -16,9 +13,17 @@ public class User implements Runnable {
 
     private Socket clientSocket;
     private AtomicBoolean running;
+    private BufferedReader input;
+    private PrintWriter output;
     public User(String ip, int port) throws IOException {
         this.clientSocket = new Socket(ip,port);
         this.running = new AtomicBoolean(true);
+        try {
+            this.input = new  BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            this.output = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void start() {
@@ -38,9 +43,16 @@ public class User implements Runnable {
 
     public void postMessage(String msg) throws IOException {
         DataOutputStream data = null;
-        data = new DataOutputStream(clientSocket.getOutputStream());
-        data.writeBytes(msg);
-        data.flush();
+        System.out.println("postMessage:...");
+        //data = new DataOutputStream(clientSocket.getOutputStream());
+        System.out.println("postMessage: println...");
+        this.output.println(msg);
+        //data.writeUTF(msg);
+        System.out.println("postMessage: println done");
+        //data.flush();
+        this.output.flush();
+        System.out.println("postMessage: flush");
+
     }
 
     public void terminateUser() {
