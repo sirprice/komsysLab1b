@@ -1,3 +1,5 @@
+package serverapplication;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -5,9 +7,9 @@ import java.net.DatagramSocket;
 /**
  * Created by magnus on 2016-09-09.
  */
-public interface ConnectionState {
+public interface ServerLogic {
     void processIncoming(DatagramPacket packet);
     void processResult();
     void respond(DatagramSocket outSocket) throws IOException;
-    ConnectionState nextState();
+    ServerLogic nextState();
 }
