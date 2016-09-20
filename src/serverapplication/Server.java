@@ -9,13 +9,22 @@ import java.util.concurrent.*;
 /**
  * Created by o_0 on 2016-09-20.
  */
-public class Server implements Runnable, ServerLogic {
+public class Server implements Runnable, ServerLogic, ServerActions {
     private static final String DELIMITERS = "/ ";
     ServerSocket serverSocket;
     private ConcurrentHashMap<InetAddress, Client> clientLookup;
-    private BlockingQueue<String> messageToBroadcast = new LinkedBlockingQueue<String>();
+    private BlockingQueue<MsgContainer> messageToBroadcast = new LinkedBlockingQueue<MsgContainer>();
     private ExecutorService threadPool;
     private ConcurrentHashMap<String,Command> commandList = new ConcurrentHashMap<String,Command>();
+    class MsgContainer {
+        public String msg;
+        public Client client;
+
+        public MsgContainer(String msg, Client client) {
+            this.msg = msg;
+            this.client = client;
+        }
+    }
     public Server(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
         this.clientLookup = new ConcurrentHashMap<InetAddress, Client>();
@@ -26,23 +35,29 @@ public class Server implements Runnable, ServerLogic {
     private void registrateAllCommands() {
         commandList.put("quit",new CommandDefault("quit"));
         commandList.put("who",new CommandDefault("who"));
-        commandList.put("nick",new CommandDefault("nick"));
+        commandList.put("nick",new CmdChangeNick(this));
         commandList.put("help",new CommandDefault("help"));
     }
-    private void broadcastMessage(String msg) {
+
+    private void sendBroadcastMessage(MsgContainer msg) {
+        sendBroadcastMessage(msg.msg,msg.client);
+    }
+    private void sendBroadcastMessage(String msg, Client from) {
         for (Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
             System.out.println(entry);
             Client c = entry.getValue();
-            c.sendMsgToclient(msg);
+            if (!c.getInetAddress().equals(from.getInetAddress())) {
+                c.sendMsgToclient(msg);
+            }
         }
     }
 
     public void run() {
         while (true) {
             try {
-                String msg = messageToBroadcast.take();
+                MsgContainer msg = messageToBroadcast.take();
 
-                broadcastMessage(msg);
+                sendBroadcastMessage(msg);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -70,9 +85,18 @@ public class Server implements Runnable, ServerLogic {
     }
 
     @Override
-    public boolean post(String msg) {
-        return messageToBroadcast.offer(msg);
+    public void disconnectClient(Client client) {
+
     }
+
+    @Override
+    public boolean broadcastMsg(String msg, Client from) {
+        return messageToBroadcast.offer(new MsgContainer(msg,from));
+    }
+//    @Override
+//    boolean broadcastMsg(String msg, Client from) {
+//        return messageToBroadcast.offer(new MsgContainer(msg,from));
+//    }
 
     @Override
     public void evaluateCommand(String msg, Client client) {

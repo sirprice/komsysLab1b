@@ -1,6 +1,7 @@
 package serverapplication;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -14,17 +15,31 @@ public class Client implements Runnable {
     private AtomicBoolean runClient;
     private BufferedReader input;
     private PrintWriter output;
-
+    private String nickName;
     public Client(Socket clientSocket, ServerLogic serverDelegate) {
         this.serverDelegate = serverDelegate;
         this.clientSocket = clientSocket;
         this.runClient = new AtomicBoolean(true);
+        String addr = clientSocket.getInetAddress().toString();
+        this.nickName = "player" +addr.substring(addr.length() - 3);
         try {
             this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             this.output = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public InetAddress getInetAddress() {
+        return clientSocket.getInetAddress();
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
     }
 
     @Override
@@ -39,7 +54,7 @@ public class Client implements Runnable {
                         // evaluate command
                         serverDelegate.evaluateCommand(msg,this);
                     }else{
-                        serverDelegate.post(msg);
+                        serverDelegate.broadcastMsg(this.nickName + ": " + msg,this);
                     }
                 }
             }

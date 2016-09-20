@@ -5,7 +5,7 @@ package serverapplication;
  */
 public class CommandDefault implements Command {
     private String name;
-
+    private ServerActions serverDelegate;
     public CommandDefault(String name) {
         this.name = name;
     }
@@ -13,5 +13,6 @@ public class CommandDefault implements Command {
     @Override
     public void processCommand(String msg, Client sender) {
         System.out.println("this is the command default: " + name);
+//        sender.sendMsgToclient("This is the commands: who,quit osv");
     }
 }
