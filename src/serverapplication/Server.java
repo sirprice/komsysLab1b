@@ -3,16 +3,19 @@ package serverapplication;
 import java.io.IOException;
 import java.net.*;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.*;
 
 /**
  * Created by o_0 on 2016-09-20.
  */
 public class Server implements Runnable, ServerLogic {
-    ServerSocket serverSocket ;
+    private static final String DELIMITERS = "/ ";
+    ServerSocket serverSocket;
     private ConcurrentHashMap<InetAddress, Client> clientLookup;
     private BlockingQueue<String> messageToBroadcast = new LinkedBlockingQueue<String>();
     private ExecutorService threadPool;
+
     public Server(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
         this.clientLookup = new ConcurrentHashMap<InetAddress, Client>();
@@ -21,7 +24,7 @@ public class Server implements Runnable, ServerLogic {
 
 
     private void broadcastMessage(String msg) {
-        for(Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
+        for (Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
             System.out.println(entry);
             Client c = entry.getValue();
             c.sendMsgToclient(msg);
@@ -48,7 +51,7 @@ public class Server implements Runnable, ServerLogic {
             Socket clientSocket = serverSocket.accept();
             System.out.println("Client connected!");
             InetAddress inetAddress = clientSocket.getInetAddress();
-            Client client = new Client(clientSocket,this);
+            Client client = new Client(clientSocket, this);
             Client oldClient = clientLookup.put(inetAddress, client);
             if (oldClient != null) {
                 oldClient.terminateClient();
@@ -61,13 +64,19 @@ public class Server implements Runnable, ServerLogic {
     }
 
     @Override
-    public boolean post(String msg) { return messageToBroadcast.offer(msg); }
+    public boolean post(String msg) {
+        return messageToBroadcast.offer(msg);
+    }
 
     @Override
     public void evaluateCommand(String msg, Client client) {
-
-
-
+        StringTokenizer tokenizer = new StringTokenizer(msg, DELIMITERS);
+        String command = null;
+        if (tokenizer.hasMoreTokens()) {
+             command = tokenizer.nextToken();
+            if (tokenizer.hasMoreTokens())
+                command = tokenizer.nextToken();
+        }
 
     }
 }
