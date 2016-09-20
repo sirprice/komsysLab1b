@@ -20,10 +20,14 @@ public class Server implements Runnable, ServerLogic {
         this.serverSocket = new ServerSocket(port);
         this.clientLookup = new ConcurrentHashMap<InetAddress, Client>();
         this.threadPool = Executors.newCachedThreadPool();
+        registrateAllCommands();
     }
 
     private void registrateAllCommands() {
-        commandList.put("TestCmd",new CommandDefault());
+        commandList.put("quit",new CommandDefault("quit"));
+        commandList.put("who",new CommandDefault("who"));
+        commandList.put("nick",new CommandDefault("nick"));
+        commandList.put("help",new CommandDefault("help"));
     }
     private void broadcastMessage(String msg) {
         for (Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
@@ -72,19 +76,16 @@ public class Server implements Runnable, ServerLogic {
 
     @Override
     public void evaluateCommand(String msg, Client client) {
-        StringTokenizer tokenizer = new StringTokenizer(msg, DELIMITERS);
+        StringTokenizer tokenizer = new StringTokenizer(msg.substring(1), DELIMITERS);
         String cmd = null;
         if (tokenizer.hasMoreTokens()) {
              cmd = tokenizer.nextToken();
-            if (tokenizer.hasMoreTokens())
-                cmd = tokenizer.nextToken();
         }
 
+        if (cmd == null) {return;}
         Command command = commandList.get(cmd);
         if (command != null) {
             command.processCommand(msg,client);
         }
-
-
     }
 }

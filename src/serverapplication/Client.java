@@ -37,6 +37,7 @@ public class Client implements Runnable {
                 if (msg != null) {
                     if (msg.charAt(0) == '/') {
                         // evaluate command
+                        serverDelegate.evaluateCommand(msg,this);
                     }else{
                         serverDelegate.post(msg);
                     }
