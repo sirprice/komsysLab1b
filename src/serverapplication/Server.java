@@ -36,9 +36,9 @@ public class Server implements Runnable, ServerLogic, ServerActions {
 
     private void registrateAllCommands() {
         commandList.put("quit",new CmdQuit(this));
-        commandList.put("who",new CommandDefault("who"));
+        commandList.put("who",new CmdWho(this));
         commandList.put("nick",new CmdChangeNick(this));
-        commandList.put("help",new CommandDefault("help"));
+        commandList.put("help",new CmdHelp(this));
     }
 
     private void sendBroadcastMessage(MsgContainer msg) {
