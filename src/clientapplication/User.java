@@ -43,15 +43,8 @@ public class User implements Runnable {
 
     public void postMessage(String msg) throws IOException {
         DataOutputStream data = null;
-        System.out.println("postMessage:...");
-        //data = new DataOutputStream(clientSocket.getOutputStream());
-        System.out.println("postMessage: println...");
         this.output.println(msg);
-        //data.writeUTF(msg);
-        System.out.println("postMessage: println done");
-        //data.flush();
         this.output.flush();
-        System.out.println("postMessage: flush");
 
     }
 
