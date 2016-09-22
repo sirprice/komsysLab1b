@@ -12,7 +12,7 @@ import java.util.concurrent.*;
 public class Server implements Runnable, ServerLogic, ServerActions {
     private static final String DELIMITERS = "/ ";
     ServerSocket serverSocket;
-    private ConcurrentHashMap<InetAddress, Client> clientLookup;
+    private ConcurrentHashMap<SocketAddress, Client> clientLookup;
     private BlockingQueue<MsgContainer> messageToBroadcast = new LinkedBlockingQueue<MsgContainer>();
     private ExecutorService threadPool;
     private ConcurrentHashMap<String, Command> commandList = new ConcurrentHashMap<String, Command>();
@@ -29,7 +29,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
 
     public Server(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
-        this.clientLookup = new ConcurrentHashMap<InetAddress, Client>();
+        this.clientLookup = new ConcurrentHashMap<SocketAddress, Client>();
         this.threadPool = Executors.newCachedThreadPool();
         registrateAllCommands();
     }
@@ -46,11 +46,11 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     }
 
     private void sendBroadcastMessage(String msg, Client from) {
-        InetAddress inetAddress = (from != null) ? from.getInetAddress() : null;
-        for (Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
+        SocketAddress inetAddress = (from != null) ? from.getSocketAddress() : null;
+        for (Map.Entry<SocketAddress, Client> entry : clientLookup.entrySet()) {
             System.out.println(entry);
             Client c = entry.getValue();
-            if (!c.getInetAddress().equals(inetAddress)) {
+            if (!c.getSocketAddress().equals(inetAddress)) {
                 c.sendMsgToclient(msg);
             }
         }
@@ -76,7 +76,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
             System.out.println("Waiting for connection...");
             Socket clientSocket = serverSocket.accept();
             System.out.println("Client connected!");
-            InetAddress inetAddress = clientSocket.getInetAddress();
+            SocketAddress inetAddress = clientSocket.getRemoteSocketAddress();//.getSocketAddress();
             Client client = new Client(clientSocket, this);
             Client oldClient = clientLookup.put(inetAddress, client);
             if (oldClient != null) {
@@ -90,13 +90,13 @@ public class Server implements Runnable, ServerLogic, ServerActions {
 
     @Override
     public void removeClient(Client client) {
-        InetAddress addr = client.getInetAddress();
+        SocketAddress addr = client.getSocketAddress();
         Client remove = this.clientLookup.remove(addr);
     }
 
     @Override
     public void disconnectClient(Client client) {
-        InetAddress addr = client.getInetAddress();
+        SocketAddress addr = client.getSocketAddress();
         Client remove = this.clientLookup.remove(addr);
         if (remove == null) {
             //System.out.println("Client already disconnect and been removed");
@@ -109,7 +109,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     @Override
     public String listNicknames() {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<InetAddress, Client> entry : clientLookup.entrySet()) {
+        for (Map.Entry<SocketAddress, Client> entry : clientLookup.entrySet()) {
             System.out.println(entry);
             Client c = entry.getValue();
             sb.append(c.getNickName() + "\n");
@@ -129,10 +129,6 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     public boolean broadcastMsg(String msg, Client from) {
         return messageToBroadcast.offer(new MsgContainer(msg, from));
     }
-//    @Override
-//    boolean broadcastMsg(String msg, Client from) {
-//        return messageToBroadcast.offer(new MsgContainer(msg,from));
-//    }
 
     @Override
     public void evaluateCommand(String msg, Client client) {
@@ -143,11 +139,14 @@ public class Server implements Runnable, ServerLogic, ServerActions {
         }
 
         if (cmd == null) {
+            client.sendMsgToclient("Unkown command");
             return;
         }
         Command command = commandList.get(cmd);
         if (command != null) {
             command.processCommand(msg, client);
+        }else {
+            client.sendMsgToclient("Unkown command");
         }
     }
 }

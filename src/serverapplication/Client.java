@@ -2,7 +2,9 @@ package serverapplication;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -11,17 +13,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Client implements Runnable {
     private ServerLogic serverDelegate;
     private Socket clientSocket;
-    private ServerLogic currentState = null;
     private AtomicBoolean runClient;
     private BufferedReader input;
     private PrintWriter output;
     private String nickName;
+    private Object writeLock = new Object();
     public Client(Socket clientSocket, ServerLogic serverDelegate) {
         this.serverDelegate = serverDelegate;
         this.clientSocket = clientSocket;
         this.runClient = new AtomicBoolean(true);
         String addr = clientSocket.getInetAddress().toString();
-        this.nickName = "player" +addr.substring(addr.length() - 3);
+        this.nickName = "player" +addr.substring(addr.length() - 3) + clientSocket.getPort();
         try {
             this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             this.output = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
@@ -30,8 +32,9 @@ public class Client implements Runnable {
         }
     }
 
-    public InetAddress getInetAddress() {
-        return clientSocket.getInetAddress();
+    public SocketAddress getSocketAddress() {
+        //System.out.println("sock add:" + clientSocket.getRemoteSocketAddress().toString());
+        return clientSocket.getRemoteSocketAddress();
     }
 
     public String getNickName() {
@@ -87,9 +90,10 @@ public class Client implements Runnable {
     }
 
     public void sendMsgToclient(String msg) {
-        System.out.println("Sending msg: " + msg + " to: " + clientSocket.getInetAddress());
-        this.output.println(msg);
-        this.output.flush();
-
+        System.out.println("Sending msg: " + msg + " to: " + clientSocket.getRemoteSocketAddress());
+        synchronized (writeLock) {  //PrintWriter is not threadsafe
+            this.output.println(msg);
+            this.output.flush();
+        }
     }
 }

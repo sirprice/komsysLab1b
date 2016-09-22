@@ -76,6 +76,7 @@ public class User implements Runnable {
                     e.printStackTrace();
                 }
             }
+            running.set(false);
         }
     }
 }
