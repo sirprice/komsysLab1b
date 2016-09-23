@@ -5,6 +5,7 @@ import java.net.*;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by o_0 on 2016-09-20.
@@ -16,6 +17,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     private BlockingQueue<MsgContainer> messageToBroadcast = new LinkedBlockingQueue<MsgContainer>();
     private ExecutorService threadPool;
     private ConcurrentHashMap<String, Command> commandList = new ConcurrentHashMap<String, Command>();
+    private AtomicBoolean running;
 
     class MsgContainer {
         public String msg;
@@ -28,17 +30,19 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     }
 
     public Server(int port) throws IOException {
+        this.running = new AtomicBoolean(true);
         this.serverSocket = new ServerSocket(port);
         this.clientLookup = new ConcurrentHashMap<SocketAddress, Client>();
         this.threadPool = Executors.newCachedThreadPool();
         registrateAllCommands();
+        System.out.println(InetAddress.getLocalHost());
     }
 
     private void registrateAllCommands() {
-        commandList.put("quit",new CmdQuit(this));
-        commandList.put("who",new CmdWho(this));
-        commandList.put("nick",new CmdChangeNick(this));
-        commandList.put("help",new CmdHelp(this));
+        commandList.put("quit", new CmdQuit(this));
+        commandList.put("who", new CmdWho(this));
+        commandList.put("nick", new CmdChangeNick(this));
+        commandList.put("help", new CmdHelp(this));
     }
 
     private void sendBroadcastMessage(MsgContainer msg) {
@@ -57,7 +61,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     }
 
     public void run() {
-        while (true) {
+        while (running.get()) {
             try {
                 MsgContainer msg = messageToBroadcast.take();
 
@@ -69,23 +73,47 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     }
 
 
-    public void start() throws IOException {
+    public void start() {
 
-        threadPool.execute(this);
-        while (true) {
-            System.out.println("Waiting for connection...");
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("Client connected!");
-            SocketAddress inetAddress = clientSocket.getRemoteSocketAddress();//.getSocketAddress();
-            Client client = new Client(clientSocket, this);
-            Client oldClient = clientLookup.put(inetAddress, client);
-            if (oldClient != null) {
-                oldClient.terminateClient();
+        try {
+            threadPool.execute(this);
+            while (running.get()) {
+                System.out.println("Waiting for connection...");
+                Socket clientSocket = null;
+                clientSocket = serverSocket.accept();
+                System.out.println("Client connected!");
+                SocketAddress inetAddress = clientSocket.getRemoteSocketAddress();//.getSocketAddress();
+                Client client = new Client(clientSocket, this);
+                Client oldClient = clientLookup.put(inetAddress, client);
+                if (oldClient != null) {
+                    oldClient.terminateClient();
+                }
+                System.out.println("Client Added!");
+                threadPool.execute(client);
+                broadcastMsg("Client " + client.getNickName() + " connected", null);
             }
-            System.out.println("Client Added!");
-            threadPool.execute(client);
-            broadcastMsg("Client " + client.getNickName() +" connected",null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            shutdownServer();
         }
+    }
+
+    public void shutdownServer() {
+        for (Map.Entry<SocketAddress, Client> entry : clientLookup.entrySet()) {
+            //System.out.println(entry);
+            Client c = entry.getValue();
+            disconnectClient(c);
+        }
+
+        try {
+            if(serverSocket != null)
+                serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        running.set(false);
+        threadPool.shutdown();
     }
 
     @Override
@@ -102,7 +130,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
             //System.out.println("Client already disconnect and been removed");
             return;
         }
-        broadcastMsg("Client: " + remove.getNickName() + " Disconected",remove);
+        broadcastMsg("Client: " + remove.getNickName() + " Disconected", remove);
         remove.terminateClient();
     }
 
@@ -120,11 +148,12 @@ public class Server implements Runnable, ServerLogic, ServerActions {
     @Override
     public String listCommands() {
         return "Commands: \n"
-                +"/quit = logout and exit \n"
-                +"/who = list of all connected users \n"
-                +"/nick <newNickName> = change nickname \n"
-                +"/help = list all available commands";
+                + "/quit = logout and exit \n"
+                + "/who = list of all connected users \n"
+                + "/nick <newNickName> = change nickname \n"
+                + "/help = list all available commands";
     }
+
     @Override
     public boolean broadcastMsg(String msg, Client from) {
         return messageToBroadcast.offer(new MsgContainer(msg, from));
@@ -145,7 +174,7 @@ public class Server implements Runnable, ServerLogic, ServerActions {
         Command command = commandList.get(cmd);
         if (command != null) {
             command.processCommand(msg, client);
-        }else {
+        } else {
             client.sendMsgToclient("Unkown command");
         }
     }

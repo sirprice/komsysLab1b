@@ -23,6 +23,7 @@ public class User implements Runnable {
             this.output = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         } catch (IOException e) {
             e.printStackTrace();
+            closeAllConnections();
         }
     }
 
@@ -30,13 +31,43 @@ public class User implements Runnable {
         Thread th = new Thread(this);
         th.start();
         Scanner scanner = new Scanner(System.in);
-        while (running.get()){
-            String msg = scanner.nextLine();
+        try {
+
+            while (running.get()) {
+                String msg = scanner.nextLine();
+                try {
+                    postMessage(msg);
+                    if (msg.equals("/quit")) {
+                        running.set(false);
+                    }
+                } catch (IOException e) {
+
+                    e.printStackTrace();
+                    running.set(false);
+                }
+            }
+        }finally {
+            closeAllConnections();
+        }
+
+    }
+
+    private void closeAllConnections() {
+        if (clientSocket != null) {
             try {
-                postMessage(msg);
+                clientSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
-                running.set(false);
+            }
+        }
+        if (this.output != null) {
+            this.output.close();
+        }
+        if (this.input != null) {
+            try {
+                this.input.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -58,24 +89,18 @@ public class User implements Runnable {
             while (running.get()) {
                 try {
                     String msg = input.readLine();
-                    if (msg == null){
+                    if (msg == null ){
                         running.set(false);
                         return;
                     }
-                    System.out.println("Incoming msg: " + msg);
+                    System.out.println(msg);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
             }
         } finally {
-            if (clientSocket != null) {
-                try {
-                    clientSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            closeAllConnections();
             running.set(false);
         }
     }

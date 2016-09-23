@@ -48,7 +48,9 @@ public class Client implements Runnable {
     @Override
     public void run() {
 
+
         try {
+            sendMsgToclient("Welcome chatter!");
             while (runClient.get()) {
 
                 String msg = input.readLine();
@@ -68,19 +70,26 @@ public class Client implements Runnable {
 
             serverDelegate.removeClient(this);
             terminateClient();
-            if (clientSocket != null) {
-                output.close();
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    clientSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            closeAllConnections();
+        }
+    }
 
+    private void closeAllConnections() {
+        if (clientSocket != null) {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (this.output != null) {
+            this.output.close();
+        }
+        if (this.input != null) {
+            try {
+                this.input.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
