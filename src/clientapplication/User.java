@@ -2,6 +2,7 @@ package clientapplication;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.Buffer;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,11 +16,12 @@ public class User implements Runnable {
     private AtomicBoolean running;
     private BufferedReader input;
     private PrintWriter output;
+
     public User(String ip, int port) throws IOException {
-        this.clientSocket = new Socket(ip,port);
+        this.clientSocket = new Socket(ip, port);
         this.running = new AtomicBoolean(true);
         try {
-            this.input = new  BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            this.input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             this.output = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         } catch (IOException e) {
             e.printStackTrace();
@@ -46,7 +48,7 @@ public class User implements Runnable {
                     running.set(false);
                 }
             }
-        }finally {
+        } finally {
             closeAllConnections();
         }
 
@@ -87,18 +89,22 @@ public class User implements Runnable {
         BufferedReader buffer = null;
         try {
             while (running.get()) {
-                try {
-                    String msg = input.readLine();
-                    if (msg == null ){
-                        running.set(false);
-                        return;
-                    }
-                    System.out.println(msg);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (input == null) {
+                    break;
                 }
+                String msg = input.readLine();
+                if (msg == null) {
+                    running.set(false);
+                    return;
+                }
+                System.out.println(msg);
+
 
             }
+        } catch (SocketException e) {
+
+        } catch (IOException e) {
+
         } finally {
             closeAllConnections();
             running.set(false);
